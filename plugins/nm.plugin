@@ -1,0 +1,127 @@
+import dbus, urllib2, json, plugins, sys, os
+from plugins import Plugin, Detector
+
+class NetworkManagerDetector(Plugin, Detector):
+    #consts
+    NM_STATE_CONNECTED = 3
+    NM_DEVICE_TYPE_802_11_WIRELESS = 2
+    NM_DEVICE_STATE_ACTIVATED = 8
+
+    def needs_setup(): False
+    def setup(): pass
+    @staticmethod
+    def detection_capabilities(): 
+        return [Detector.WIFI]
+    @staticmethod
+    def name():
+        return "nm"
+
+    def __init__(self):
+        self.__nm = None
+        self.__bus = None
+
+    def can_run(self):
+        try:
+            #get list of all aps over dbus
+            self.__bus = dbus.SystemBus()
+            self.__nm = self.__bus.get_object('org.freedesktop.NetworkManager', '/org/freedesktop/NetworkManager')
+            return True
+        except:
+            return False
+
+    def detect(self, type):
+        if not self.__bus:
+            self.__bus = dbus.SystemBus()
+            self.__nm = self.__bus.get_object('org.freedesktop.NetworkManager', '/org/freedesktop/NetworkManager')
+        if type == Detector.WIFI:
+            aps = []
+
+            state = self.__nm.state()
+            if state != NM_STATE_CONNECTED:
+                return None
+            
+            devices = self.__nm.GetDevices()
+            for path in devices:
+                device = self.__bus.get_object('org.freedesktop.NetworkManager', path)
+                device_props = dbus.Interface(device, dbus_interface='org.freedesktop.DBus.Properties')
+                props = device_props.GetAll("org.freedesktop.NetworkManager.Device")
+
+                if props["DeviceType"] != NM_DEVICE_TYPE_802_11_WIRELESS:
+                    continue
+
+                if props["State"] != NM_DEVICE_STATE_ACTIVATED:
+                    # This device isn't active yet
+                    continue
+
+                access_points = device.GetAccessPoints()
+                
+                for network_path in access_points:
+                    if not network_path:
+                    # No active network
+                        continue
+                    network = self.__bus.get_object('org.freedesktop.NetworkManager', network_path)
+                    network_props = dbus.Interface(network, dbus_interface='org.freedesktop.DBus.Properties')
+                    ssid = network_props.Get("org.freedesktop.NetworkManager.AccessPoint", "Ssid", byte_arrays=True)
+                    mac = network_props.Get("org.freedesktop.NetworkManager.AccessPoint", "HwAddress")
+                    sig_str = network_props.Get("org.freedesktop.NetworkManager.AccessPoint", "Strength")
+                    aps.append({"ssid": ssid, "mac": mac, "signal_strength": sig_str})
+            return aps
+
+if False:
+    #results array of wireless aps
+    post_str = "{\"version\":\"1.1.0\",\"wifi_towers\":["
+    ap_count = 0
+
+
+    state = nm.state()
+    if state != NM_STATE_CONNECTED:
+        print "Not connected with Network Manager - cannot use geolocation!"
+
+    devices = nm.GetDevices()
+    for path in devices:
+        device = bus.get_object('org.freedesktop.NetworkManager', path)
+        device_props = dbus.Interface(device, dbus_interface='org.freedesktop.DBus.Properties')
+        props = device_props.GetAll("org.freedesktop.NetworkManager.Device")
+
+        if props["DeviceType"] != NM_DEVICE_TYPE_802_11_WIRELESS:
+            continue
+
+        if props["State"] != NM_DEVICE_STATE_ACTIVATED:
+            # This device isn't active yet
+            continue
+
+        access_points = device.GetAccessPoints()
+        for network_path in access_points:
+
+            if not network_path:
+            # No active network
+                continue
+
+
+            network = bus.get_object('org.freedesktop.NetworkManager', network_path)
+            network_props = dbus.Interface(network, dbus_interface='org.freedesktop.DBus.Properties')
+            ssid = network_props.Get("org.freedesktop.NetworkManager.AccessPoint", "Ssid", byte_arrays=True)
+            mac = network_props.Get("org.freedesktop.NetworkManager.AccessPoint", "HwAddress")
+            sig_str = network_props.Get("org.freedesktop.NetworkManager.AccessPoint", "Strength")
+
+            #serialise to json manually
+            if ap_count > 0:
+                post_str += ","
+            post_str += "{\"ssid\":\"%s\",\"mac_address\":\"%s\",\"signal_strength\":\"%d\"}" % (ssid, mac, sig_str)
+            ap_count = ap_count + 1
+
+    post_str += "]}"
+
+    # send wifi tower data to google
+    print "Sending query to google:"
+    print post_str
+    print "Waiting for response..."
+
+    req = urllib2.Request("http://www.google.com/loc/json", post_str)
+    response = urllib2.urlopen(req)
+
+    result = json.dumps(response.read())
+    print "Response:"
+    print result
+
+
