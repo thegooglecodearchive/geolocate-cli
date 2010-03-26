@@ -28,7 +28,7 @@ parser.add_option("-y", "--listlocators",
                   default=False)
 parser.add_option("-t", "--type", dest="type",
                   help="Specify the type of information to geolocate " + 
-                  "based on.  Currently only \"wifi\" is supported.",
+                  "based on.  Currently \"wifi\" and \"ipself\" are supported.",
                   default=None)
 parser.add_option("-i", "--info", dest="info",
                   help="Specifies the data to geolocate with.  Optional.",
