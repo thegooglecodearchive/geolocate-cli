@@ -1,14 +1,19 @@
 import urllib, urllib2, plugins, sys, os, json
 import xml.etree.ElementTree as etree
-from plugins import Plugin, Locator
+from plugins import Plugin, Locator, Detector
 
-class IpInfoDbLocator(Plugin, Locator):
+class IpInfoDb(Plugin, Locator, Detector):
 
-    def needs_setup(): False
+    def needs_setup(): return False
     def setup(): pass
     @staticmethod
     def location_capabilities(): 
-        return [Locator.IP, Locator.IPSELF]
+        return [Locator.IP, Locator.IPSELF, Detector.IP]
+    @staticmethod
+    def detection_capabilities(): 
+        return [Detector.IP]
+
+
     @staticmethod
     def name():
         return "ipinfodb"
@@ -29,15 +34,27 @@ class IpInfoDbLocator(Plugin, Locator):
     def __extract_result(self, xml):
 #        print xml
         obj = dict((e.tag, e.text) for e in (etree.fromstring(xml)))
-        r = {}
-        r['lat'] = obj['Latitude']
-        r['long'] = obj['Longitude']
+#        r = {}
+#        r['lat'] = obj['Latitude']
+#        r['long'] = obj['Longitude']
         return obj
+    
+    
+    def detect(self, type):
+        if type != Detector.IP:
+            raise "Unhandled type exception"
+        req = urllib2.Request(self.__url, None,
+                              {'User-agent' : self.__useragent})
+        u = urllib2.urlopen(req)
+        res = self.__extract_result(u.read())
+        return {'ip' : res['Ip'] }
+        
 
     def locate(self, type, detection):
         if type == Locator.IP:
             #results array of wireless aps
-            d = json.loads(detection)
+            # d = json.loads(detection)
+            d = detection
             append = '&' + urllib.urlencode({'ip' : d['ip']})
         elif type == Locator.IPSELF:
             append = ''
