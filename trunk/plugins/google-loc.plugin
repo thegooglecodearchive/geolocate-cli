@@ -7,7 +7,7 @@ class GoogleLocator(Plugin, Locator):
     def setup(): pass
     @staticmethod
     def location_capabilities(): 
-        return [Locator.WIFI]
+        return [Locator.WIFI, Locator.IPSELF]
     @staticmethod
     def name():
         return "google-loc"
@@ -48,11 +48,15 @@ class GoogleLocator(Plugin, Locator):
                 ap_strs.append('{' + ','.join(pairs) + '}')
             post_str += ','.join(ap_strs)
             post_str += "]}"
-
-            req = urllib2.Request(self.__url, post_str, 
-                                  {'User-agent' : self.__useragent})
-            u = urllib2.urlopen(req)
-            result = json.loads(u.read())
-            return self.__extract_result(result)
+        elif type == Locator.IPSELF:
+            post_str = "{\"version\":\"1.1.0\"}"
+        else:
+            raise "Unhandled type exception"
+            
+        req = urllib2.Request(self.__url, post_str, 
+                              {'User-agent' : self.__useragent})
+        u = urllib2.urlopen(req)
+        result = json.loads(u.read())
+        return self.__extract_result(result)
 
 

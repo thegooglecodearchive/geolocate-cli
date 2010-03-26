@@ -11,14 +11,14 @@ class Plugin(object):
     def can_run(): abstract
 
 class Detector(object):
-    types = ["wifi", "cell", "ip"]
-    WIFI, CELL, IP = tuple(types)
+    types = ["wifi", "cell", "ip", "ipself"]
+    WIFI, CELL, IP, IPSELF = tuple(types)
     def detection_capabilities(): abstract
     def detect(type): abstract
 
 class Locator(object):
     types = Detector.types
-    WIFI, CELL, IP = tuple(types)
+    WIFI, CELL, IP, IPSELF = tuple(types)
     def location_capabilities(): abstract
     def locate(type, detection): abstract
 
