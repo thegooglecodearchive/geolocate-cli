@@ -101,13 +101,13 @@ if options.info == "auto":
             if p.name() == options.detector:
                 if not plugins.Detector in p.__bases__:
                     print_err("Plugin \"%s\" is not a detector." % options.detector)
-                    if not options.type in p.detection_capabilities():
-                        print_err("Plugin \"%s\" does not detect type \"%s\"." % (options.detector, options.type))
-                    detector = p()
-                    if detector.can_run():
-                        break
-                    else:
-                        print_error("Plugin \"%s\" cannot run." % options.detector)
+                if not options.type in p.detection_capabilities():
+                    print_err("Plugin \"%s\" does not detect type \"%s\"." % (options.detector, options.type))
+                detector = p()
+                if detector.can_run():
+                    break
+                else:
+                    print_error("Plugin \"%s\" cannot run." % options.detector)
         if not detector:
             print_err("Could not find a plugin \"%s\"." % options.detector)
     
