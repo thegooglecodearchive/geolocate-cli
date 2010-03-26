@@ -113,7 +113,8 @@ if options.info == "auto":
     
     info = detector.detect(options.type)
 else:
-    info = options.info
+    import json
+    info = json.loads(options.info)
 
 locator = None
 if options.locator == "auto":
