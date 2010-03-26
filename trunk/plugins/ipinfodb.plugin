@@ -1,0 +1,53 @@
+import urllib, urllib2, plugins, sys, os, json
+import xml.etree.ElementTree as etree
+from plugins import Plugin, Locator
+
+class IpInfoDbLocator(Plugin, Locator):
+
+    def needs_setup(): False
+    def setup(): pass
+    @staticmethod
+    def location_capabilities(): 
+        return [Locator.IP, Locator.IPSELF]
+    @staticmethod
+    def name():
+        return "ipinfodb"
+
+    def __init__(self):
+        self.__url = "http://ipinfodb.com/ip_query.php?timezone=false"
+        self.__testurl = "http://ipinfodb.com/geonames.php"
+        self.__useragent = "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.1.8) Gecko/20100214 Ubuntu/9.10 (karmic) Firefox/3.5"
+    def can_run(self):
+        try:
+            req = urllib2.Request(self.__testurl, None, 
+                                  {'User-agent' : self.__useragent})
+            u = urllib2.urlopen(req)
+            return True
+        except:
+            return False
+
+    def __extract_result(self, xml):
+#        print xml
+        obj = dict((e.tag, e.text) for e in (etree.fromstring(xml)))
+        r = {}
+        r['lat'] = obj['Latitude']
+        r['long'] = obj['Longitude']
+        return obj
+
+    def locate(self, type, detection):
+        if type == Locator.IP:
+            #results array of wireless aps
+            d = json.loads(detection)
+            append = '&' + urllib.urlencode({'ip' : d['ip']})
+        elif type == Locator.IPSELF:
+            append = ''
+        else:
+            raise "Unhandled type exception"
+            
+        req = urllib2.Request(self.__url + append, None,
+                              {'User-agent' : self.__useragent})
+        u = urllib2.urlopen(req)
+        result = u.read()
+        return self.__extract_result(result)
+
+
