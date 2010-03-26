@@ -10,14 +10,18 @@ class Plugin(object):
     def name(): abstract
     def can_run(): abstract
 
-class Locator(object):
-    def locate(): abstract
-
 class Detector(object):
     types = ["wifi", "cell", "ip"]
     WIFI, CELL, IP = tuple(types)
     def detection_capabilities(): abstract
     def detect(type): abstract
+
+class Locator(object):
+    types = Detector.types
+    WIFI, CELL, IP = tuple(types)
+    def location_capabilities(): abstract
+    def locate(type, detection): abstract
+
 
 class Encoder(object):
     pass

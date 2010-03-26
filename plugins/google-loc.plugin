@@ -1,0 +1,58 @@
+import urllib2, plugins, sys, os, json
+from plugins import Plugin, Locator
+
+class GoogleLocator(Plugin, Locator):
+
+    def needs_setup(): False
+    def setup(): pass
+    @staticmethod
+    def location_capabilities(): 
+        return [Locator.WIFI]
+    @staticmethod
+    def name():
+        return "google-loc"
+
+    def __init__(self):
+        self.__url = "http://www.google.com/loc/json"
+        self.__testurl = "http://www.google.com"
+        self.__useragent = "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.1.8) Gecko/20100214 Ubuntu/9.10 (karmic) Firefox/3.5"
+    def can_run(self):
+        try:
+            req = urllib2.Request(self.__testurl, None, 
+                                  {'User-agent' : self.__useragent})
+            u = urllib2.urlopen(req)
+            return True
+        except:
+            return False
+
+    def __extract_result(self, res):
+        r = {}
+        r['lat'] = res['location']['latitude']
+        r['long'] = res['location']['longitude']
+        r['accuracy'] = res['location']['accuracy']
+        return r
+
+    def locate(self, type, detection):
+        if type == Locator.WIFI:
+            #results array of wireless aps
+            post_str = "{\"version\":\"1.1.0\",\"wifi_towers\":["
+            ap_strs = []
+            for ap in detection:
+                pairs = []
+                if 'ssid' in ap:
+                    pairs.append("\"ssid\":\"%s\"" % ap['ssid'])
+                if 'mac' in ap:
+                    pairs.append("\"mac_address\":\"%s\"" % ap['mac'])
+                if 'signal_strength' in ap:
+                    pairs.append("\"signal_strength\":\"%d\"" % ap['signal_strength'])
+                ap_strs.append('{' + ','.join(pairs) + '}')
+            post_str += ','.join(ap_strs)
+            post_str += "]}"
+
+            req = urllib2.Request(self.__url, post_str, 
+                                  {'User-agent' : self.__useragent})
+            u = urllib2.urlopen(req)
+            result = json.loads(u.read())
+            return self.__extract_result(result)
+
+
