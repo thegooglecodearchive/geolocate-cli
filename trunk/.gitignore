@@ -1,0 +1,4 @@
+# Use wildcards as well
+*~
+*.pyc
+plugins/*.pluginc
