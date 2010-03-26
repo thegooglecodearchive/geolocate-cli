@@ -118,6 +118,7 @@ else:
 
 if options.locator == "auto":
     unrunnable = []
+    locator = None
     for p in plugins.find_plugins():
         if (plugins.Locator in p.__bases__) and (options.type in p.location_capabilities()):
             if options.verbose:
