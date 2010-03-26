@@ -1,0 +1,38 @@
+import urllib2
+from plugins import Plugin, Detector
+
+class WipmaniaIpDetector(Plugin, Detector):
+
+    def needs_setup(): return False
+    def setup(): pass
+    @staticmethod
+    def detection_capabilities(): 
+        return [Detector.IP]
+    @staticmethod
+    def name():
+        return "whatismyip"
+
+    def __init__(self):
+        self.__url = "http://whatismyip.org/"
+        self.__useragent = "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.1.8) Gecko/20100214 Ubuntu/9.10 (karmic) Firefox/3.5"
+        self.__reply = None
+
+    def ip_req(self):
+
+        req = urllib2.Request(self.__url, None, 
+                              {'User-agent' : self.__useragent})
+        return urllib2.urlopen(req).read()
+        
+    def can_run(self):
+        try:
+            if not self.__reply:
+                self.__reply = self.ip_req()
+            return True
+        except:
+            return False
+
+    def detect(self, type):
+        if not self.__reply:
+            self.__reply = self.ip_req()
+        if type == Detector.IP:
+            return {'ip' :  self.__reply.strip()}
