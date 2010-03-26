@@ -1,0 +1,100 @@
+#!/usr/bin/python
+
+import plugins, sys, os, optparse
+
+def print_err(msg):
+    sys.stderr.write(msg + "\n")
+    sys.exit(1)
+
+#  Detect plugins
+path = os.path.abspath(os.path.dirname(sys.argv[0])) + os.path.sep
+plugins_path = path + "plugins/"
+
+if not (os.path.exists(plugins_path) and os.path.isdir(plugins_path)):
+    print_err("Could not find plugins, expected at: " + plugins_path)
+
+# Try and load plugins
+plugins.load_plugins(plugins_path)
+
+#  Parse command-line
+parser = optparse.OptionParser(version="%prog 1.0")
+parser.add_option("-t", "--type", dest="type",
+                  help="This is help for <type>.",
+                  default=None)
+parser.add_option("-v", "--verbose",
+                  action="store_true", dest="verbose", 
+                  help="Verbose output.",
+                  default=False)
+parser.add_option("-i", "--info", dest="info",
+                  help="This is help for <info>.",
+                  default="auto")
+parser.add_option("-d", "--detector", dest="detector",
+                  help="Detector to use to find info, if <info> is set to auto.",
+                  default="auto")
+parser.add_option("-l", "--listdetectors",
+                  action="store_true", dest="list_detectors", 
+                  help="List known detectors, and exit.",
+                  default=False)
+
+
+(options, args) = parser.parse_args()
+
+if options.list_detectors:
+    if options.verbose:
+        print "Detector list:"
+    for p in plugins.find_plugins():
+        if plugins.Detector in p.__bases__:
+            print p.name()
+    sys.exit(0)
+    
+
+if not (options.type and options.info):
+    print "ERROR -- Expected Arguments not given!"
+    parser.print_help()
+    sys.exit(1)
+
+# if we are automatically detecting location info
+if options.info == "auto":
+    if options.verbose: print "Automatically detecting info."
+    
+    # make sure its a valid info type
+    if not options.type in plugins.Detector.types:
+        print_err("Unknown type %s" % options.type)
+
+    # find a detector plugin that can do what we want
+    detector = None
+    if options.detector == "auto":
+        unrunnable = []
+        for p in plugins.find_plugins():
+            if (plugins.Detector in p.__bases__) and (options.type in p.detection_capabilities()):
+                if options.verbose:
+                    print "Using detector %s" % p.name()
+                detector = p()
+                if detector.can_run():
+                    break
+                else:
+                    unrunnable.append(p.name())
+                    detector = None
+        if not detector:
+            if len(unrunnable) > 0:
+                print_err("All detectors of type \"%s\" are unrunnable.  They are \"%s\"." % (options.type, ', '.join(unrunnable)))
+            else:
+                print_err("Could not find detector of type \"%s\"." % options.type)
+                
+    else:
+        for p in plugins.find_plugins():
+            if p.name() == options.detector:
+                if not plugins.Detector in p.__bases__:
+                    print_err("Plugin \"%s\" is not a detector." % options.detector)
+                    if not options.type in p.detection_capabilities():
+                        print_err("Plugin \"%s\" does not detect type \"%s\"." % (options.detector, options.type))
+                    detector = p()
+                    if detector.can_run():
+                        break
+                    else:
+                        print_error("Plugin \"%s\" cannot run." % options.detector)
+        if not detector:
+            print_err("Could not find a plugin \"%s\"." % options.detector)
+    
+    d = detector()
+    print d.detect(options.detector)
