@@ -10,7 +10,7 @@ class WipmaniaIpDetector(Plugin, Detector):
         return [Detector.IP]
     @staticmethod
     def name():
-        return "wipmania-myip"
+        return "wipmania"
 
     def __init__(self):
         self.__url = "http://api.wipmania.com/"
