@@ -98,3 +98,4 @@ if options.info == "auto":
     
     d = detector()
     print d.detect(options.detector)
+
