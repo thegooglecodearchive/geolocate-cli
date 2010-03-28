@@ -1,0 +1,46 @@
+import dbus, plugins, sys, dbus.service
+from plugins import Plugin, Detector
+
+class NetworkManagerDetector(Plugin, Detector):
+    #consts
+
+    def needs_setup(): return False
+    def setup(): pass
+    @staticmethod
+    def detection_capabilities(): 
+        return [Detector.WIFI]
+    @staticmethod
+    def name():
+        return "wicd"
+
+    def __init__(self):
+        self.__wicd = None
+        self.__bus = None
+
+    def can_run(self):
+        try:
+            #get list of all aps over dbus
+            self.__bus = dbus.SystemBus()
+            self.__wicd = self.__bus.get_object('org.wicd.daemon', '/org/wicd/daemon/wireless')
+            return True
+        except:
+            return False
+
+    def detect(self, type):
+        if not self.__bus:
+            self.__bus = dbus.SystemBus()
+            self.__wicd = self.__bus.get_object('org.wicd.daemon', '/org/wicd/daemon/wireless')
+        if type == Detector.WIFI:
+            aps = []
+            for network_id in range(0, self.__wicd.GetNumberOfNetworks()):
+
+#                for key in ['essid','quality','strength','dbm_strength','bssid','mode','channel','encryption',
+#                           'encryption_method','ip','netmask','gateway','use_global_dns',
+#                            'automatic','enctype','dns1','dns2','dns3',
+#                            ]:
+#                    print "%s :\t%s" % (key, 
+                
+                aps.append({"ssid": str(self.__wicd.GetWirelessProperty(network_id, 'essid')), 
+                            "mac":  str(self.__wicd.GetWirelessProperty(network_id, 'bssid')), 
+                            "signal_strength": int(self.__wicd.GetWirelessProperty(network_id, 'quality'))})
+            return aps
