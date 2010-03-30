@@ -20,7 +20,7 @@ class IwListScrapeDetector(Plugin, Detector):
     def __run_iwlist(self):
         if not self.__procresult:
             devnull = open('/dev/null', 'w')
-            process = subprocess.Popen('iwlist scan'.split(), shell=False, stdout=subprocess.PIPE, stderr=devnull)
+            process = subprocess.Popen('/sbin/iwlist scan'.split(), shell=False, stdout=subprocess.PIPE, stderr=devnull)
             self.__strresult = process.communicate()[0]
             self.__procresult = process.returncode 
 	    devnull.close()
@@ -51,7 +51,7 @@ class IwListScrapeDetector(Plugin, Detector):
                     else:
                         quality_search = re_quality.match(line)
                         if quality_search:
-                            qual = int(((float(quality_search.groups()[0]) / float(quality_search.groups()[1]) * 100)) + 0.5)
+                            qual = int(((float(quality_search.groups()[0]) / float(quality_search.groups()[1]) * 100)) + 0.499)
                             ap["signal_strength"] = qual
             if ap: aps.append(ap)
             return aps
