@@ -1,0 +1,21 @@
+from plugins import Plugin, Locator
+
+class EchoLocator(Plugin, Locator):
+
+    def needs_setup(): return False
+    def setup(): pass
+    @staticmethod
+    def location_capabilities(): 
+        return Locator.types
+
+    @staticmethod
+    def name():
+        return "echolocate"
+
+    def can_run(self): return True
+
+    def locate(self, type, detection):
+        print detection
+        return ""
+
+
