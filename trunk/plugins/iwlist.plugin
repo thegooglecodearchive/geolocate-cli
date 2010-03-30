@@ -1,0 +1,61 @@
+import plugins, sys, subprocess, re
+from plugins import Plugin, Detector
+
+class IwListScrapeDetector(Plugin, Detector):
+    #consts
+
+    def needs_setup(): return False
+    def setup(): pass
+    @staticmethod
+    def detection_capabilities(): 
+        return [Detector.WIFI]
+    @staticmethod
+    def name():
+        return "iwlist"
+
+    def __init__(self):
+        self.__procresult = None
+        self.__strresult = ""
+
+    def __run_iwlist(self):
+        if not self.__procresult:
+            devnull = open('/dev/null', 'w')
+            process = subprocess.Popen('iwlist scan'.split(), shell=False, stdout=subprocess.PIPE, stderr=devnull)
+            self.__strresult = process.communicate()[0]
+            self.__procresult = process.returncode 
+            close(devnull)
+    def can_run(self):
+        self.__run_iwlist()
+        return (self.__procresult == 0)
+        
+    def detect(self, type):
+        if type == Detector.WIFI:
+            self.__run_iwlist()
+            aps = []
+
+            re_addr = re.compile(r'\s*Cell[\s\d]*-[\s]*Address:\s*(\S*)\s*')
+            re_ssid = re.compile(r'\s*ESSID:\"([^\n\r"]+)\"\s*')
+            re_quality = re.compile(r'\s*Quality=([\d]+)/([\d]+)\s+.*')
+            lines = self.__strresult.split("\n")
+            ap = None
+            for line in lines:
+                mac_search = re_addr.match(line)
+                if mac_search: 
+                    if ap:
+                        aps.append(ap)
+                    ap = {'mac' : mac_search.groups()[0]}
+                else:
+                    ssid_search = re_ssid.match(line)
+                    if ssid_search:
+                        ap["ssid"] = ssid_search.groups()[0]
+                    else:
+                        quality_search = re_quality.match(line)
+                        if quality_search:
+                            qual = int(((float(quality_search.groups()[0]) / float(quality_search.groups()[1]) * 100)) + 0.5)
+                            print "quality: %d%%" % qual
+                            ap["signal_strength"] = qual
+            if ap: aps.append(ap)
+            return aps
+        else: 
+            raise "Unsupport detector type %s" % type
+
