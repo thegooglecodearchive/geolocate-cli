@@ -45,3 +45,34 @@ def find_plugins():
 class StandardNames(object):
     detector_types = ["wifi", "cell", "ip", "ipself"]
     WIFI, CELL, IP, IPSELF = tuple(detector_types)
+
+    # A dictionary containing all known names and aliases
+    names = {
+        # canonical geographic names
+        'lat' : 'lat', 
+        'long' : 'long',
+        'accuracy' : 'accuracy',
+        'country' : 'country',
+        'city' : 'city',
+        'zip' : 'zip',
+        'address' : 'address',
+        
+        # geographic name aliases
+        'latitude' : 'lat',
+        'y' : 'lat',
+        'longitude': 'long',
+        'x' : 'long',
+        'acc' : 'accuracy',
+        'iso-3166-1' : 'country',
+        'zipcode' : 'zip',
+        'postcode' : 'postcode',
+        'addr' : 'address',
+
+        # canonical detection data names
+        'mac' : 'mac',
+        'ssid' : 'ssid',
+        'signal_strength' : 'signal_strength',
+        'ip' : 'ip'
+        }
+
+    
