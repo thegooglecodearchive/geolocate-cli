@@ -10,12 +10,12 @@
 # for more details. You should have received a copy of the GNU General 
 # Public License along with this program. If not, see <http://www.gnu.org/licenses/>. 
 
-import plugins, sys
+import plugins, sys, os
 
 VERSION = "0.1"
 
 def print_err(msg):
-    sys.stderr.write(msg + "\n")
+    sys.stderr.write("ERROR -- " + msg + "\n")
     sys.exit(1)
 
 def init_plugin_system():
@@ -27,5 +27,5 @@ def init_plugin_system():
         print_err("Could not find plugins, expected at: " + plugins_path)
         
     # Try and load plugins
-        plugins.load_plugins(plugins_path)
+    plugins.load_plugins(plugins_path)
         

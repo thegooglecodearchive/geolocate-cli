@@ -16,16 +16,15 @@
 
 
 import plugins, sys, os, optparse, misc
+from misc import *
 
-misc.init_plugin_system()
+init_plugin_system()
 
 #  Parse command-line
-parser = optparse.OptionParser(version=("%prog " + misc.VERSION))
-parser.add_option("-x", "--listdetectors",
-                  action="store_true", dest="list_detectors", 
-                  help="List known detectors, and exit.",
-                  default=False)
-parser.add_option("-y", "--listlocators",
+usage = "usage: %prog [options] [sniff]"
+parser = optparse.OptionParser(version=("%prog " + misc.VERSION), usage=usage)
+
+parser.add_option("-t", "--list",
                   action="store_true", dest="list_locators", 
                   help="List known locators, and exit.",
                   default=False)
@@ -33,26 +32,27 @@ parser.add_option("-s", "--listoutspecifiers", dest="list_specifiers",
                   action="store_true",
                   help="List valid output specifiers, and exit.",
                   default=False)
-parser.add_option("-t", "--type", dest="type",
-                  help="Specify the type of information to geolocate " + 
-                  "based on.  Currently \"wifi\", \"ip\" and \"ipself\" are supported.",
-                  default=None)
-parser.add_option("-i", "--info", dest="info",
-                  help="Specifies the data to geolocate with.  Optional.",
-                  default="auto")
-parser.add_option("-d", "--detector", dest="detector",
-                  help="Detector to use to find info.  Optional",
-                  default="auto")
 parser.add_option("-l", "--locator", dest="locator",
-                  help="Locator to use to geolocate. Optional.",
-                  default="auto")
+                  help="Locator to use to geolocate.",
+                  default=None)
 parser.add_option("-o", "--outputtype", dest="outputtype",
-                  help="Output type to use.  Optional.  " +
+                  help="Output type to use.  " +
                   "Currently \"json\" and \"csv\" are supported but " +
                   "this can be extended with plugins.",
                   default="json")
 parser.add_option("-f", "--outputformat", dest="outputformat",
-                  help="Format specifier for csv output.  Optional.  " +
+                  help="Format specifier for csv output.  " +
+                  "Takes the form \"abcd\" where a, b, c and d are output " +
+                  "format specifiers.  Run with --listspecifiers for a list.",
+                  default=None)
+parser.add_option("-i", "--inputtype", dest="inputtype",
+                  help="Input type to use. " +
+                  "Currently \"json\" and \"csv\" are supported but " +
+                  "this can be extended with plugins.",
+                  default="json")
+parser.add_option("-r", "--inputformat", dest="inputformat",
+                  help="Format specifier for csv output.  Required if \"csv\" " +
+                  "--inputtype is used. " +
                   "Takes the form \"abcd\" where a, b, c and d are output " +
                   "format specifiers.  Run with --listspecifiers for a list.",
                   default=None)
@@ -64,14 +64,15 @@ parser.add_option("-v", "--verbose",
 
 (options, args) = parser.parse_args()
 
-if options.list_detectors:
-    if options.verbose:
-        print "Detector list:"
-    for p in plugins.find_plugins():
-        if plugins.Detector in p.__bases__:
-            print p.name()
-    sys.exit(0)
-    
+if len(args) == 1:
+    input = [args[0]]
+elif len(args) == 0:
+    input = sys.stdin
+else:
+    print "ERROR -- Too many arguments."
+    parser.print_help()
+    sys.exit(1)
+
 if options.list_locators:
     if options.verbose:
         print "Locator list:"
@@ -87,107 +88,60 @@ if options.list_specifiers:
         print "%s\t%s" % details
     sys.exit(0)
 
-
-if not options.type:
-    print "ERROR -- Expected Arguments not given!"
-    parser.print_help()
-    sys.exit(1)
-
-outputformatter = plugins.find_plugin_by_name(options.outputtype, plugins.Formatter)
+outputformatter = plugins.find_plugin_by_name(options.outputtype, plugins.Formatter)()
 if not outputformatter:
-    print_err("All could not find plugin for output formatter %s." % (options.outputtype))
+    print_err("could not find plugin for output formatter \"%s\"." % (options.outputtype))
+if outputformatter.needs_output_specifiers() and not options.outputformat:
+    print_error("To use output type \"%s\" you must specify an output format with --outputformat." % outputformatter.name())
 
-inputformatter = plugins.find_plugin_by_name("json", plugins.Formatter)
+inputformatter = plugins.find_plugin_by_name(options.inputtype, plugins.Formatter)()
+if not inputformatter:
+    print_err("could not find plugin for input formatter \"%s\"." % (options.inputtype))
+if inputformatter.needs_input_specifiers() and not options.inputformat:
+    print_error("To use input type \"%s\" you must specify an input format with --inputformat." % inputformatter.name())
 
+# We may have multiple sniffs to process, so do it in a loop
+for line in input:
+    try:
+        info = inputformatter.parse_input(line, options.inputformat)
+    except:
+        print_err("Could not parse input \"%s\" with input formatter \"%s\"" % (line, options.inputtype))
+        continue
 
+    # make sure our input types are correctly named
+    input_types = []
+    for key in info.keys():
+        input_types.append(plugins.StandardNames.canonical_names[key])
 
-# if we are automatically detecting location info
-if options.info == "auto":
-    if options.verbose: print "Automatically detecting info."
-    
-    # make sure its a valid info type
-    if not options.type in plugins.StandardNames.detector_types:
-        print_err("Unknown type %s" % options.type)
-
-    # find a detector plugin that can do what we want
-    detector = None
-    if options.detector == "auto":
+    locator = None
+    if options.locator:
+        p = plugins.find_plugin_by_name(options.locator)
+        if not p:
+            print_err("Could not find a plugin \"%s\"." % options.locator)
+        if not plugins.Locator in p.__bases__:
+            print_err("Plugin \"%s\" is not a locator." % options.locator)
+        locator = p()
+        if not locator.can_run():
+            print_error("Plugin \"%s\" cannot run." % options.locator)
+    else:
         unrunnable = []
         for p in plugins.find_plugins():
-            if (plugins.Detector in p.__bases__) and (options.type in p.detection_capabilities()):
+            if (plugins.Locator in p.__bases__):
                 if options.verbose:
-                    print "Using detector %s" % p.name()
-                detector = p()
-                if detector.can_run():
-                    break
-                else:
-                    unrunnable.append(p.name())
-                    detector = None
-        if not detector:
+                    print "Using locator %s" % p.name()
+                if p.can_locate(input_types):
+                    locator = p()
+                    if locator.can_run():
+                        break
+                    else:
+                        unrunnable.append(p.name())
+                        locator = None
+        if not locator:
             if len(unrunnable) > 0:
-                print_err("All detectors of type \"%s\" are unrunnable.  They are \"%s\"." % (options.type, ', '.join(unrunnable)))
+                print_err("All locators of are unrunnable.  They are \"%s\"." % (', '.join(unrunnable)))
             else:
-                print_err("Could not find detector of type \"%s\"." % options.type)
-                
-    else:
-        p = plugins.find_plugin_by_name(options.detector)
-        if not p:
-            print_err("Could not find a plugin \"%s\"." % options.detector)
-        if not plugins.Detector in p.__bases__:
-            print_err("Plugin \"%s\" is not a detector." % options.detector)
-        if not options.type in p.detection_capabilities():
-            print_err("Plugin \"%s\" does not detect type \"%s\"." % (options.detector, options.type))
-        detector = p()
-        if not detector.can_run():
-            print_error("Plugin \"%s\" cannot run." % options.detector)
+                print_err("Could not find suitable locator")
 
-    if outputformatter.needs_output_specifiers() and not options.outputformat:
-        print_error("To use output type \"%s\" you must specify an output format with --outputformat." % outputformatter.name())
 
-    detection = outputformatter.format_output(detector.detect(options.type), options.outputformat)
-else:
-    #if using -i option
-    detection = options.info
-
-# Fixme!
-options.inputformat = None
-if inputformatter.needs_input_specifiers() and not options.inputformat:
-    print_error("To use input type \"%s\" you must specify an output format with --inputformat." % inputformatter.name())
-
-info = inputformatter.parse_input(inputformatter, options.inputformat)
-
-locator = None
-if options.locator == "auto":
-    unrunnable = []
-    for p in plugins.find_plugins():
-        if (plugins.Locator in p.__bases__) and (options.type in p.location_capabilities()):
-            if options.verbose:
-                print "Using locator %s" % p.name()
-            locator = p()
-            if locator.can_run():
-                break
-            else:
-                unrunnable.append(p.name())
-                locator = None
-    if not locator:
-        if len(unrunnable) > 0:
-            print_err("All locators of type \"%s\" are unrunnable.  They are \"%s\"." % (options.type, ', '.join(unrunnable)))
-        else:
-            print_err("Could not find locator of type \"%s\"." % options.type)
-else:
-    for p in plugins.find_plugins():
-        if p.name() == options.locator:
-            if not plugins.Locator in p.__bases__:
-                print_err("Plugin \"%s\" is not a locator." % options.locator)
-            if not options.type in p.location_capabilities():
-                print_err("Plugin \"%s\" does not detect type \"%s\"." % (options.locator, options.type))
-            locator = p()
-            if locator.can_run():
-                break
-            else:
-                print_error("Plugin \"%s\" cannot run." % options.locator)
-    if not locator:
-        print_err("Could not find a plugin \"%s\"." % options.locator)
-
-location = locator.locate(options.type, info)
-print location
+    location = locator.locate(info)
+    print location

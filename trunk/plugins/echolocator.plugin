@@ -16,9 +16,9 @@ class EchoLocator(Plugin, Locator):
 
     def needs_setup(): return False
     def setup(): pass
-    @staticmethod
-    def location_capabilities(): 
-        return StandardNames.detector_types
+    @classmethod
+    def location_capabilities(cls): 
+        return StandardNames.names.keys()
 
     @staticmethod
     def name():
@@ -26,7 +26,7 @@ class EchoLocator(Plugin, Locator):
 
     def can_run(self): return True
 
-    def locate(self, type, detection):
+    def locate(self, detection):
         print detection
         return ""
 
