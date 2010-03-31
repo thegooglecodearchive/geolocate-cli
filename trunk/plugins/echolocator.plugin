@@ -10,7 +10,7 @@
 # for more details. You should have received a copy of the GNU General 
 # Public License along with this program. If not, see <http://www.gnu.org/licenses/>. 
 
-from plugins import Plugin, Locator
+from plugins import Plugin, Locator, StandardNames
 
 class EchoLocator(Plugin, Locator):
 
@@ -18,7 +18,7 @@ class EchoLocator(Plugin, Locator):
     def setup(): pass
     @staticmethod
     def location_capabilities(): 
-        return Locator.types
+        return StandardNames.detector_types
 
     @staticmethod
     def name():

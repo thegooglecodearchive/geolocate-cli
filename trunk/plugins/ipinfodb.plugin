@@ -12,7 +12,7 @@
 
 import urllib, urllib2, plugins, sys, os, json
 import xml.etree.ElementTree as etree
-from plugins import Plugin, Locator, Detector
+from plugins import *
 
 class IpInfoDb(Plugin, Locator, Detector):
 
@@ -20,11 +20,10 @@ class IpInfoDb(Plugin, Locator, Detector):
     def setup(): pass
     @staticmethod
     def location_capabilities(): 
-        return [Locator.IP, Locator.IPSELF, Detector.IP]
+        return [StandardNames.IP, StandardNames.IPSELF]
     @staticmethod
     def detection_capabilities(): 
-        return [Detector.IP]
-
+        return [StandardNames.IP]
 
     @staticmethod
     def name():
@@ -53,7 +52,7 @@ class IpInfoDb(Plugin, Locator, Detector):
     
     
     def detect(self, type):
-        if type != Detector.IP:
+        if type != StandardNames.IP:
             raise "Unhandled type exception"
         req = urllib2.Request(self.__url, None,
                               {'User-agent' : self.__useragent})
@@ -63,12 +62,12 @@ class IpInfoDb(Plugin, Locator, Detector):
         
 
     def locate(self, type, detection):
-        if type == Locator.IP:
+        if type == StandardNames.IP:
             #results array of wireless aps
             # d = json.loads(detection)
             d = detection
             append = '&' + urllib.urlencode({'ip' : d['ip']})
-        elif type == Locator.IPSELF:
+        elif type == StandardNames.IPSELF:
             append = ''
         else:
             raise "Unhandled type exception"

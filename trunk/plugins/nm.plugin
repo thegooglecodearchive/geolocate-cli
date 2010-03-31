@@ -11,7 +11,7 @@
 # Public License along with this program. If not, see <http://www.gnu.org/licenses/>. 
 
 import dbus, plugins, sys, os
-from plugins import Plugin, Detector
+from plugins import Plugin, Detector, StandardNames
 
 class NetworkManagerDetector(Plugin, Detector):
     #consts
@@ -23,7 +23,7 @@ class NetworkManagerDetector(Plugin, Detector):
     def setup(): pass
     @staticmethod
     def detection_capabilities(): 
-        return [Detector.WIFI]
+        return [StandardNames.WIFI]
     @staticmethod
     def name():
         return "nm"
@@ -45,7 +45,7 @@ class NetworkManagerDetector(Plugin, Detector):
         if not self.__bus:
             self.__bus = dbus.SystemBus()
             self.__nm = self.__bus.get_object('org.freedesktop.NetworkManager', '/org/freedesktop/NetworkManager')
-        if type == Detector.WIFI:
+        if type == StandardNames.WIFI:
             aps = []
             state = self.__nm.state()
 #            if state != self.__NM_STATE_CONNECTED:

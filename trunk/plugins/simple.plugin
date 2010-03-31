@@ -13,13 +13,13 @@
 
 
 import dbus, plugins, sys, os
-from plugins import Plugin, Detector
+from plugins import Plugin, Detector, StandardNames
 
 class IpSelfDetector(Plugin, Detector):
     def needs_setup(): return False
     def setup(): pass
     @staticmethod
-    def detection_capabilities(): return [Detector.IPSELF]
+    def detection_capabilities(): return [StandardNames.IPSELF]
     @staticmethod
     def name(): return "simple-ipself"
     def __init__(self): pass

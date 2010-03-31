@@ -11,7 +11,7 @@
 # Public License along with this program. If not, see <http://www.gnu.org/licenses/>. 
 
 import urllib2
-from plugins import Plugin, Detector
+from plugins import Plugin, Detector, StandardNames
 
 class WipmaniaIpDetector(Plugin, Detector):
 
@@ -19,7 +19,7 @@ class WipmaniaIpDetector(Plugin, Detector):
     def setup(): pass
     @staticmethod
     def detection_capabilities(): 
-        return [Detector.IP]
+        return [StandardNames.IP]
     @staticmethod
     def name():
         return "wipmania"
@@ -46,6 +46,6 @@ class WipmaniaIpDetector(Plugin, Detector):
     def detect(self, type):
         if not self.__reply:
             self.__reply = self.ip_req()
-        if type == Detector.IP:
+        if type == StandardNames.IP:
             parts = self.__reply.split('<br>')
             return {'ip' : parts[0]}

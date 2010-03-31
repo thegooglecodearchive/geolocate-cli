@@ -11,7 +11,7 @@
 # Public License along with this program. If not, see <http://www.gnu.org/licenses/>. 
 
 import urllib2, plugins, sys, os, json
-from plugins import Plugin, Locator
+from plugins import Plugin, Locator, StandardNames
 
 class GoogleLocator(Plugin, Locator):
 
@@ -19,7 +19,7 @@ class GoogleLocator(Plugin, Locator):
     def setup(): pass
     @staticmethod
     def location_capabilities(): 
-        return [Locator.WIFI, Locator.IPSELF]
+        return [StandardNames.WIFI, StandardNames.IPSELF]
     @staticmethod
     def name():
         return "google-loc"
@@ -45,7 +45,7 @@ class GoogleLocator(Plugin, Locator):
         return r
 
     def locate(self, type, detection):
-        if type == Locator.WIFI:
+        if type == StandardNames.WIFI:
             #results array of wireless aps
             post_str = "{\"version\":\"1.1.0\",\"wifi_towers\":["
             ap_strs = []
@@ -60,7 +60,7 @@ class GoogleLocator(Plugin, Locator):
                 ap_strs.append('{' + ','.join(pairs) + '}')
             post_str += ','.join(ap_strs)
             post_str += "]}"
-        elif type == Locator.IPSELF:
+        elif type == StandardNames.IPSELF:
             post_str = "{\"version\":\"1.1.0\"}"
         else:
             raise "Unhandled type exception"

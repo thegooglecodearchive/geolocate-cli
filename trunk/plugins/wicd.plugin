@@ -11,7 +11,7 @@
 # Public License along with this program. If not, see <http://www.gnu.org/licenses/>. 
 
 import dbus, plugins, sys, dbus.service
-from plugins import Plugin, Detector
+from plugins import Plugin, Detector, StandardNames
 
 class NetworkManagerDetector(Plugin, Detector):
     #consts
@@ -20,7 +20,7 @@ class NetworkManagerDetector(Plugin, Detector):
     def setup(): pass
     @staticmethod
     def detection_capabilities(): 
-        return [Detector.WIFI]
+        return [StandardNames.WIFI]
     @staticmethod
     def name():
         return "wicd"
@@ -42,7 +42,7 @@ class NetworkManagerDetector(Plugin, Detector):
         if not self.__bus:
             self.__bus = dbus.SystemBus()
             self.__wicd = self.__bus.get_object('org.wicd.daemon', '/org/wicd/daemon/wireless')
-        if type == Detector.WIFI:
+        if type == StandardNames.WIFI:
             aps = []
             for network_id in range(0, self.__wicd.GetNumberOfNetworks()):
 
