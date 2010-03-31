@@ -15,11 +15,24 @@
 # Public License along with this program. If not, see <http://www.gnu.org/licenses/>. 
 
 
-import plugins, sys, os, optparse, misc
+import plugins, sys, os, optparse
 
+def print_err(msg):
+    sys.stderr.write(msg + "\n")
+    sys.exit(1)
+
+#  Detect plugins
+path = os.path.abspath(os.path.dirname(sys.argv[0])) + os.path.sep
+plugins_path = path + "plugins/"
+
+if not (os.path.exists(plugins_path) and os.path.isdir(plugins_path)):
+    print_err("Could not find plugins, expected at: " + plugins_path)
+
+# Try and load plugins
+plugins.load_plugins(plugins_path)
 
 #  Parse command-line
-parser = optparse.OptionParser(version=("%prog " + misc.VERSION))
+parser = optparse.OptionParser(version="%prog 1.0")
 parser.add_option("-x", "--listdetectors",
                   action="store_true", dest="list_detectors", 
                   help="List known detectors, and exit.",
@@ -141,7 +154,7 @@ if options.info == "auto":
             print_error("Plugin \"%s\" cannot run." % options.detector)
 
     if outputformatter.needs_output_specifiers() and not options.outputformat:
-        print_error("To use output type \"%s\" you must specify an output format with --outputformat." % outputformatter.name())
+        print_error("To use output type \"%s\" you must specify an output format with --outputformat." %s outputformatter.name())
 
     detection = outputformatter.format_output(detector.detect(options.type), options.outputformat)
 else:
@@ -151,7 +164,7 @@ else:
 # Fixme!
 options.inputformat = None
 if inputformatter.needs_input_specifiers() and not options.inputformat:
-    print_error("To use input type \"%s\" you must specify an output format with --inputformat." % inputformatter.name())
+    print_error("To use input type \"%s\" you must specify an output format with --inputformat." %s inputformatter.name())
 
 info = inputformatter.parse_input(inputformatter, options.inputformat)
 
