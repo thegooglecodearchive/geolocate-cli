@@ -15,12 +15,22 @@ import os, glob, imp
 # Inpired by http://lucumr.pocoo.org/2006/7/3/python-plugin-system
 
 class Plugin(object):
-#    DETECTOR, LOCATOR, ENCODER = range(3)
-#    def plugin_type(): abstract
     def needs_setup(): abstract
     def setup(): abstract
+    @staticmethod    
     def name(): abstract
     def can_run(): abstract
+
+class Formatter(object):
+    def needs_setup(): return False
+    def setup(): pass
+    def can_run(): return True
+
+    def needs_input_specifiers(): abstract
+    def needs_output_specifiers(): abstract
+    def parse_input(input, specifiers): abstract
+    def format_output(output, specifiers): abstract
+
 
 class Detector(object):
     def detection_capabilities(): abstract
@@ -42,12 +52,28 @@ def load_plugins(path):
 def find_plugins():
     return Plugin.__subclasses__()
 
+def find_plugin_by_name(name, type=None):
+    name = name.lower()
+    if type:
+        if Plugin in type.__bases__:
+            all = type.__subclasses__()
+        else:
+            return None
+    else:
+        all = Plugin.__subclasses__()
+    for p in all:
+        if p.name().lower() == name:
+            return p
+    return None
+
+
+
 class StandardNames(object):
     detector_types = ["wifi", "cell", "ip", "ipself"]
     WIFI, CELL, IP, IPSELF = tuple(detector_types)
 
     # A dictionary containing all known names and aliases
-    names = {
+    canonical_names = {
         # canonical geographic names
         'lat' : 'lat', 
         'long' : 'long',
@@ -74,5 +100,19 @@ class StandardNames(object):
         'signal_strength' : 'signal_strength',
         'ip' : 'ip'
         }
-
     
+    # Returns a tuple of the format:
+    #    (specifier, description)
+    names = {
+        'lat' : ('y', 'Latitude'),
+        'long' : ('x', 'Longitude'),
+        'accuracy' : ('a', 'Accuracy of geocode'),
+        'country' : ('c', 'Country'),
+        'city' : ('t', 'City'),
+        'zip' : ('z', 'Zip code'),
+        'address' : ('d', 'Street address'),
+        'mac' : ('m', 'MAC address'),
+        'ssid' : ('e', 'SSID'),
+        'signal_strength' : ('s', 'Signal strength'),
+        'ip' : ('i', 'IP address')
+        }

@@ -41,6 +41,10 @@ parser.add_option("-y", "--listlocators",
                   action="store_true", dest="list_locators", 
                   help="List known locators, and exit.",
                   default=False)
+parser.add_option("-s", "--listoutspecifiers", dest="list_specifiers",
+                  action="store_true",
+                  help="List valid output specifiers, and exit.",
+                  default=False)
 parser.add_option("-t", "--type", dest="type",
                   help="Specify the type of information to geolocate " + 
                   "based on.  Currently \"wifi\", \"ip\" and \"ipself\" are supported.",
@@ -54,6 +58,16 @@ parser.add_option("-d", "--detector", dest="detector",
 parser.add_option("-l", "--locator", dest="locator",
                   help="Locator to use to geolocate. Optional.",
                   default="auto")
+parser.add_option("-o", "--outputtype", dest="outputtype",
+                  help="Output type to use.  Optional.  " +
+                  "Currently \"json\" and \"csv\" are supported but " +
+                  "this can be extended with plugins.",
+                  default="json")
+parser.add_option("-f", "--outputformat", dest="outputformat",
+                  help="Format specifier for csv output.  Optional.  " +
+                  "Takes the form \"abcd\" where a, b, c and d are output " +
+                  "format specifiers.  Run with --listspecifiers for a list.",
+                  default=None)
 parser.add_option("-v", "--verbose",
                   action="store_true", dest="verbose", 
                   help="Verbose output.",
@@ -78,10 +92,26 @@ if options.list_locators:
             print p.name()
     sys.exit(0)
 
+if options.list_specifiers:
+    if options.verbose:
+        print "Output specifiers:"
+    for name, details in plugins.StandardNames.names.items():
+        print "%s\t%s" % details
+    sys.exit(0)
+
+
 if not options.type:
     print "ERROR -- Expected Arguments not given!"
     parser.print_help()
     sys.exit(1)
+
+outputformatter = plugins.find_plugin_by_name(options.outputtype, plugins.Formatter)
+if not outputformatter:
+    print_err("All could not find plugin for output formatter %s." % (options.outputtype))
+
+inputformatter = plugins.find_plugin_by_name("json", plugins.Formatter)
+
+
 
 # if we are automatically detecting location info
 if options.info == "auto":
@@ -112,24 +142,31 @@ if options.info == "auto":
                 print_err("Could not find detector of type \"%s\"." % options.type)
                 
     else:
-        for p in plugins.find_plugins():
-            if p.name() == options.detector:
-                if not plugins.Detector in p.__bases__:
-                    print_err("Plugin \"%s\" is not a detector." % options.detector)
-                if not options.type in p.detection_capabilities():
-                    print_err("Plugin \"%s\" does not detect type \"%s\"." % (options.detector, options.type))
-                detector = p()
-                if detector.can_run():
-                    break
-                else:
-                    print_error("Plugin \"%s\" cannot run." % options.detector)
-        if not detector:
+        p = plugins.find_plugin_by_name(options.detector)
+        if not p:
             print_err("Could not find a plugin \"%s\"." % options.detector)
-    
-    info = detector.detect(options.type)
+        if not plugins.Detector in p.__bases__:
+            print_err("Plugin \"%s\" is not a detector." % options.detector)
+        if not options.type in p.detection_capabilities():
+            print_err("Plugin \"%s\" does not detect type \"%s\"." % (options.detector, options.type))
+        detector = p()
+        if not detector.can_run():
+            print_error("Plugin \"%s\" cannot run." % options.detector)
+
+    if outputformatter.needs_output_specifiers() and not options.outputformat:
+        print_error("To use output type \"%s\" you must specify an output format with --outputformat." %s outputformatter.name())
+
+    detection = outputformatter.format_output(detector.detect(options.type), options.outputformat)
 else:
-    import json
-    info = json.loads(options.info)
+    #if using -i option
+    detection = options.info
+
+# Fixme!
+options.inputformat = None
+if inputformatter.needs_input_specifiers() and not options.inputformat:
+    print_error("To use input type \"%s\" you must specify an output format with --inputformat." %s inputformatter.name())
+
+info = inputformatter.parse_input(inputformatter, options.inputformat)
 
 locator = None
 if options.locator == "auto":
