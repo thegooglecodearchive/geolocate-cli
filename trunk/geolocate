@@ -17,6 +17,7 @@
 
 import plugins, sys, os, optparse, misc
 
+misc.init_plugin_system()
 
 #  Parse command-line
 parser = optparse.OptionParser(version=("%prog " + misc.VERSION))
