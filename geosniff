@@ -1,0 +1,139 @@
+#!/usr/bin/env python
+
+# A program to sniff for geolocatable data.
+# Copyright (C) 2010 Francis Markham
+# This program is free software: you can redistribute it and/or modify it 
+# under the terms of the GNU General Public License as published by 
+# the Free Software Foundation, either version 3 of the License, or 
+# (at your option) any later version. This program is distributed in the 
+# hope that it will be useful, but WITHOUT ANY WARRANTY; without 
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR 
+# A PARTICULAR PURPOSE. See the GNU General Public License 
+# for more details. You should have received a copy of the GNU General 
+# Public License along with this program. If not, see <http://www.gnu.org/licenses/>. 
+
+
+import plugins, sys, os, optparse, misc
+from misc import *
+
+init_plugin_system()
+
+#  Parse command-line
+usage = "usage: %prog [options]"
+parser = optparse.OptionParser(version=("%prog " + misc.VERSION), usage=usage)
+parser.add_option("-t", "--type", dest="type",
+                  help="Specify the type of information to sniff out. " + 
+                  "Currently \"wifi\", \"ip\" and \"ipself\" are supported.",
+                  default=None)
+parser.add_option("-s", "--sniffer", dest="detector",
+                  help="Sniffer plugin to use to find info.",
+                  default=None)
+parser.add_option("-l", "--list",
+                  action="store_true", dest="list_detectors", 
+                  help="List known sniffers, and exit.",
+                  default=False)
+parser.add_option("-o", "--outputtype", dest="outputtype",
+                  help="Output type to use.  " +
+                  "Currently \"json\" and \"csv\" are supported but " +
+                  "this can be extended with plugins.",
+                  default="json")
+parser.add_option("-m", "--listoutputtypes", dest="list_outputtypes",
+                  action="store_true",
+                  help="List valid output types, and exit.",
+                  default=False)
+parser.add_option("-f", "--outputformat", dest="outputformat",
+                  help="Format specifier for csv output.  Optional.  " +
+                  "Takes the form \"abcd\" where a, b, c and d are output " +
+                  "format specifiers.  Run with --listspecifiers for a list.",
+                  default=None)
+parser.add_option("-n", "--listoutspecifiers", dest="list_specifiers",
+                  action="store_true",
+                  help="List valid output specifiers, and exit.",
+                  default=False)
+parser.add_option("-v", "--verbose",
+                  action="store_true", dest="verbose", 
+                  help="Verbose output.",
+                  default=False)
+
+
+(options, args) = parser.parse_args()
+
+if len(args) > 0:
+    print "ERROR -- Too many arguments."
+    parser.print_help()
+    sys.exit(1)
+
+# If we have no specified option type, and no specified
+# detector, default to an ip-based geolocation
+if not options.type and not options.detector:
+    options.type = "ip"
+
+if options.list_detectors:
+    if options.verbose:
+        print "Detector list:"
+    for p in plugins.find_plugins():
+        if plugins.Detector in p.__bases__:
+            print p.name()
+    sys.exit(0)
+
+if options.list_outputtypes:
+    if options.verbose:
+        print "Output types:"
+    for p in plugins.find_plugins():
+        if plugins.Formatter in p.__bases__:
+            print p.name()
+    sys.exit(0)
+
+if options.list_specifiers:
+    if options.verbose:
+        print "Output specifiers:"
+    for name, details in plugins.StandardNames.names.items():
+        print "%s\t%s" % details
+    sys.exit(0)
+
+outputformatter = plugins.find_plugin_by_name(options.outputtype, plugins.Formatter)()
+if not outputformatter:
+    print_err("could not find plugin for output formatter \"%s\"." % (options.outputtype))
+
+# make sure its a valid info type
+if not options.type in plugins.StandardNames.detector_types:
+    print_err("type \"%s\" is not a valid type!" % options.type)
+
+# find a detector plugin that can do what we want
+detector = None
+if options.detector:
+    p = plugins.find_plugin_by_name(options.detector)
+    if not p:
+        print_err("Could not find a plugin \"%s\"." % options.detector)
+    if not plugins.Detector in p.__bases__:
+        print_err("Plugin \"%s\" is not a detector." % options.detector)
+    if options.type and not options.type in p.detection_capabilities():
+        print_err("Plugin \"%s\" does not detect type \"%s\"." % (options.detector, options.type))
+    detector = p()
+    if not detector.can_run():
+        print_error("Plugin \"%s\" cannot run." % options.detector)
+else:
+# We are searching by type, not detector
+    unrunnable = []
+    for p in plugins.find_plugins():
+        if (plugins.Detector in p.__bases__) and (options.type in p.detection_capabilities()):
+            detector = p()
+            if detector.can_run():
+                if options.verbose:
+                    print "Using detector %s" % p.name()
+                break
+            else:
+                unrunnable.append(p.name())
+                detector = None
+    if not detector:
+        if len(unrunnable) > 0:
+            print_err("All detectors of type \"%s\" are unrunnable.  They are \"%s\"." % (options.type, ', '.join(unrunnable)))
+        else:
+            print_err("Could not find detector of type \"%s\"." % options.type)
+
+if outputformatter.needs_output_specifiers() and not options.outputformat:
+    print_error("To use output type \"%s\" you must specify an output format with --outputformat." % outputformatter.name())
+
+detection = outputformatter.format_output(detector.detect(options.type), options.outputformat)
+
+print detection

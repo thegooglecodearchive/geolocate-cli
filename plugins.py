@@ -37,8 +37,18 @@ class Detector(object):
     def detect(type): abstract
 
 class Locator(object):
-    def location_capabilities(): abstract
-    def locate(type, detection): abstract
+    @classmethod
+    def can_locate(cls, names):
+        okay = cls.location_capabilities()
+        for n in names:
+            if not n in okay:
+                return False
+        else:
+            return True
+
+    @classmethod
+    def location_capabilities(cls): abstract
+    def locate(detection): abstract
 
 
 class Encoder(object):
@@ -54,16 +64,15 @@ def find_plugins():
 
 def find_plugin_by_name(name, type=None):
     name = name.lower()
-    if type:
-        if Plugin in type.__bases__:
-            all = type.__subclasses__()
-        else:
-            return None
-    else:
-        all = Plugin.__subclasses__()
-    for p in all:
+    for p in find_plugins():
         if p.name().lower() == name:
-            return p
+            if type:
+                if type in p.__bases__:
+                    return p
+                else:
+                    continue
+            else:
+                return p
     return None
 
 
@@ -98,7 +107,8 @@ class StandardNames(object):
         'mac' : 'mac',
         'ssid' : 'ssid',
         'signal_strength' : 'signal_strength',
-        'ip' : 'ip'
+        'ip' : 'ip',
+        'ipself' : 'ipself'
         }
     
     # Returns a tuple of the format:
@@ -116,3 +126,10 @@ class StandardNames(object):
         'signal_strength' : ('s', 'Signal strength'),
         'ip' : ('i', 'IP address')
         }
+
+    @staticmethod
+    def find_name(specifier):
+        for name, (spec, desc) in StandardNames.names.items():
+            if specifier == spec:
+                return name
+        return None

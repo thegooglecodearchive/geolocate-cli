@@ -12,6 +12,7 @@
 
 import json
 from plugins import Plugin, Formatter, StandardNames
+from misc import print_err
 
 class JSONFormatter(Plugin, Formatter):
     def needs_input_specifiers(self): 
@@ -23,10 +24,44 @@ class JSONFormatter(Plugin, Formatter):
     def parse_input(self, input, specifiers=None):
         return json.loads(input)
         
-    def format_output(self output, specifiers=None):
+    def format_output(self, output, specifiers=None):
         return json.dumps(output)
 
     @staticmethod
     def name(): return "json"
+
+
+class CSVFormatter(Plugin, Formatter):
+    def needs_input_specifiers(self): 
+        return True
+
+    def needs_output_specifiers(self): 
+        return False
+
+    def parse_input(self, input, specifiers=None):
+        return json.loads(input)
+        
+    def format_output(self, output, specifiers=None):
+        if not specifiers:
+            out = []
+            keys = output.keys()
+            keys.sort()
+            for key in keys:
+                out.append(output[key])
+        else:
+            out = []
+            for s in list(specifiers):
+                key = StandardNames.find_name(s)
+                if not key:
+                    print_err("unknown specifier \"%s\"" % s)
+                if output.has_key(key):
+                    out.append(output[key])
+                else:
+                    out.append('')
+
+        return ','.join(out)
+
+    @staticmethod
+    def name(): return "csv"
 
         

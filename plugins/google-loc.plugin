@@ -17,12 +17,15 @@ class GoogleLocator(Plugin, Locator):
 
     def needs_setup(): False
     def setup(): pass
-    @staticmethod
-    def location_capabilities(): 
-        return [StandardNames.WIFI, StandardNames.IPSELF]
+    @classmethod
+    def location_capabilities(cls): 
+        return [StandardNames.canonical_names['mac'], 
+                StandardNames.canonical_names['ssid'],
+                StandardNames.canonical_names['signal_strength']
+                ]
     @staticmethod
     def name():
-        return "google-loc"
+        return "google"
 
     def __init__(self):
         self.__url = "http://www.google.com/loc/json"
@@ -44,8 +47,10 @@ class GoogleLocator(Plugin, Locator):
         r['accuracy'] = res['location']['accuracy']
         return r
 
-    def locate(self, type, detection):
-        if type == StandardNames.WIFI:
+    def locate(self, detection):
+        if detection.has_key('ipself'):
+            post_str = "{\"version\":\"1.1.0\"}"
+        else:
             #results array of wireless aps
             post_str = "{\"version\":\"1.1.0\",\"wifi_towers\":["
             ap_strs = []
@@ -60,10 +65,6 @@ class GoogleLocator(Plugin, Locator):
                 ap_strs.append('{' + ','.join(pairs) + '}')
             post_str += ','.join(ap_strs)
             post_str += "]}"
-        elif type == StandardNames.IPSELF:
-            post_str = "{\"version\":\"1.1.0\"}"
-        else:
-            raise "Unhandled type exception"
             
         req = urllib2.Request(self.__url, post_str, 
                               {'User-agent' : self.__useragent})
