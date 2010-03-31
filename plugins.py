@@ -23,14 +23,10 @@ class Plugin(object):
     def can_run(): abstract
 
 class Detector(object):
-    types = ["wifi", "cell", "ip", "ipself"]
-    WIFI, CELL, IP, IPSELF = tuple(types)
     def detection_capabilities(): abstract
     def detect(type): abstract
 
 class Locator(object):
-    types = Detector.types
-    WIFI, CELL, IP, IPSELF = tuple(types)
     def location_capabilities(): abstract
     def locate(type, detection): abstract
 
@@ -45,3 +41,7 @@ def load_plugins(path):
 
 def find_plugins():
     return Plugin.__subclasses__()
+
+class StandardNames(object):
+    detector_types = ["wifi", "cell", "ip", "ipself"]
+    WIFI, CELL, IP, IPSELF = tuple(detector_types)

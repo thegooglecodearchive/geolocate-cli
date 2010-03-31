@@ -11,7 +11,7 @@
 # Public License along with this program. If not, see <http://www.gnu.org/licenses/>. 
 
 import plugins, sys, subprocess, re
-from plugins import Plugin, Detector
+from plugins import Plugin, Detector, StandardNames
 
 class IwListScrapeDetector(Plugin, Detector):
     #consts
@@ -20,7 +20,7 @@ class IwListScrapeDetector(Plugin, Detector):
     def setup(): pass
     @staticmethod
     def detection_capabilities(): 
-        return [Detector.WIFI]
+        return [StandardNames.WIFI]
     @staticmethod
     def name():
         return "iwlist"
@@ -41,7 +41,7 @@ class IwListScrapeDetector(Plugin, Detector):
         return (self.__procresult == 0)
         
     def detect(self, type):
-        if type == Detector.WIFI:
+        if type == StandardNames.WIFI:
             self.__run_iwlist()
             aps = []
 

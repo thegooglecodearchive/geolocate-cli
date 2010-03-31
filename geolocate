@@ -88,7 +88,7 @@ if options.info == "auto":
     if options.verbose: print "Automatically detecting info."
     
     # make sure its a valid info type
-    if not options.type in plugins.Detector.types:
+    if not options.type in plugins.StandardNames.detector_types:
         print_err("Unknown type %s" % options.type)
 
     # find a detector plugin that can do what we want
