@@ -60,7 +60,7 @@ class IpInfoDb(Plugin, Locator, Detector):
                               {'User-agent' : self.__useragent})
         u = urllib2.urlopen(req)
         res = self.__extract_result(u.read())
-        return {'ip' : res['ip'] }
+        return {'ip' : res['Ip'] }
         
 
     def locate(self, detection):
