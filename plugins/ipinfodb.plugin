@@ -10,7 +10,7 @@
 # for more details. You should have received a copy of the GNU General 
 # Public License along with this program. If not, see <http://www.gnu.org/licenses/>. 
 
-import urllib, urllib2, plugins, sys, os, json
+import urllib, urllib2, plugins, sys, os
 import xml.etree.ElementTree as etree
 from plugins import *
 
@@ -66,8 +66,6 @@ class IpInfoDb(Plugin, Locator, Detector):
     def locate(self, detection):
         detection = detection[0]
         if detection.has_key('ip'):
-            #results array of wireless aps
-            # d = json.loads(detection)
             d = detection
             append = '&' + urllib.urlencode({'ip' : d['ip']})
         elif detection.has_key('ipself'):
