@@ -28,8 +28,8 @@ class GoogleLocator(Plugin, Locator):
         return "google"
 
     def __init__(self):
-        self.__url = "http://www.google.com/loc/json"
-        self.__testurl = "http://www.google.com"
+        self.__url = "https://www.google.com/loc/json"
+        self.__testurl = "https://www.google.com"
         self.__useragent = "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.1.8) Gecko/20100214 Ubuntu/9.10 (karmic) Firefox/3.5"
     def can_run(self):
         try:
@@ -65,7 +65,6 @@ class GoogleLocator(Plugin, Locator):
                 ap_strs.append('{' + ','.join(pairs) + '}')
             post_str += ','.join(ap_strs)
             post_str += "]}"
-            print post_str
         req = urllib2.Request(self.__url, post_str, 
                               {'User-agent' : self.__useragent})
         u = urllib2.urlopen(req)
