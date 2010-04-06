@@ -52,7 +52,7 @@ class GoogleLocator(Plugin, Locator):
             post_str = "{\"version\":\"1.1.0\"}"
         else:
             #results array of wireless aps
-            post_str = "{\"version\":\"1.1.0\",\"wifi_towers\":["
+            post_str = "{\"version\":\"1.1.0\", \"request_address\":\"true\", \"wifi_towers\":["
             ap_strs = []
             for ap in detection:
                 pairs = []
