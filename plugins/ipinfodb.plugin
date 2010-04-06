@@ -64,6 +64,7 @@ class IpInfoDb(Plugin, Locator, Detector):
         
 
     def locate(self, detection):
+        detection = detection[0]
         if detection.has_key('ip'):
             #results array of wireless aps
             # d = json.loads(detection)

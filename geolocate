@@ -108,9 +108,13 @@ for line in input:
         print_err("Could not parse input \"%s\" with input formatter \"%s\"" % (line, options.inputtype))
         continue
 
+    # If its not in a list, listify
+    if type(info) != type([]):
+        info = [info]
+
     # make sure our input types are correctly named
     input_types = []
-    for key in info.keys():
+    for key in info[0].keys():
         input_types.append(plugins.StandardNames.canonical_names[key])
 
     locator = None
