@@ -44,6 +44,7 @@ class WipmaniaIpDetector(Plugin, Detector):
             return False
 
     def detect(self, type):
+        print type
         if not self.__reply:
             self.__reply = self.ip_req()
         if type == StandardNames.IP:

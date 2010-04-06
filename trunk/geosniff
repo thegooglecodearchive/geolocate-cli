@@ -68,6 +68,7 @@ if len(args) > 0:
 if not options.type and not options.detector:
     options.type = "ip"
 
+
 if options.list_detectors:
     if options.verbose:
         print "Detector list:"
@@ -94,9 +95,12 @@ if options.list_specifiers:
 outputformatter = plugins.find_plugin_by_name(options.outputtype, plugins.Formatter)()
 if not outputformatter:
     print_err("could not find plugin for output formatter \"%s\"." % (options.outputtype))
+if outputformatter.needs_output_specifiers() and not options.outputformat:
+    print_error("To use output type \"%s\" you must specify an output format with --outputformat." % outputformatter.name())
+
 
 # make sure its a valid info type
-if not options.type in plugins.StandardNames.detector_types:
+if options.type and not options.type in plugins.StandardNames.detector_types:
     print_err("type \"%s\" is not a valid type!" % options.type)
 
 # find a detector plugin that can do what we want
@@ -111,7 +115,9 @@ if options.detector:
         print_err("Plugin \"%s\" does not detect type \"%s\"." % (options.detector, options.type))
     detector = p()
     if not detector.can_run():
-        print_error("Plugin \"%s\" cannot run." % options.detector)
+        print_err("Plugin \"%s\" cannot run at this time." % options.detector)
+    if not options.type:
+        options.type = p.detection_capabilities()[0]
 else:
 # We are searching by type, not detector
     unrunnable = []
@@ -130,9 +136,6 @@ else:
             print_err("All detectors of type \"%s\" are unrunnable.  They are \"%s\"." % (options.type, ', '.join(unrunnable)))
         else:
             print_err("Could not find detector of type \"%s\"." % options.type)
-
-if outputformatter.needs_output_specifiers() and not options.outputformat:
-    print_error("To use output type \"%s\" you must specify an output format with --outputformat." % outputformatter.name())
 
 detection = outputformatter.format_output(detector.detect(options.type), options.outputformat)
 
