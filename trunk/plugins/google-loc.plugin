@@ -49,11 +49,9 @@ class GoogleLocator(Plugin, Locator):
         r['lat'] = res['location']['latitude']
         r['long'] = res['location']['longitude']
         r['accuracy'] = res['location']['accuracy']
-        r['city'] = res['location']['address']['city']
-        r['country'] = res['location']['address']['country']
-        r['region'] = res['location']['address']['region']
-        r['street'] = res['location']['address']['street']
-        r['zip'] = res['location']['address']['postal_code']
+        if res['location'].has_key('address'):
+            for (key, val) in res['location']['address'].items():
+                r[key] = val
         return r
 
     def locate(self, detection):
