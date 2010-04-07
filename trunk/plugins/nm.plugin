@@ -47,22 +47,22 @@ class NetworkManagerDetector(Plugin, Detector):
             self.__nm = self.__bus.get_object('org.freedesktop.NetworkManager', '/org/freedesktop/NetworkManager')
         if type == StandardNames.WIFI:
             aps = []
-            state = self.__nm.state()
-#            if state != self.__NM_STATE_CONNECTED:
-#                return None
-            
+
             devices = self.__nm.GetDevices()
             for path in devices:
                 device = self.__bus.get_object('org.freedesktop.NetworkManager', path)
+
                 device_props = dbus.Interface(device, dbus_interface='org.freedesktop.DBus.Properties')
                 props = device_props.GetAll("org.freedesktop.NetworkManager.Device")
 
-                if props["DeviceType"] != self.__NM_DEVICE_TYPE_802_11_WIRELESS:
-                    continue
+                # Different magic seems to be required on different versions of networkmanager
+                try:
+                    devtype = props["DeviceType"]
+                except KeyError:
+                    devtype = device.Get("org.freedesktop.NetworkManager.Device", 'DeviceType')
 
-#                if props["State"] != self.__NM_DEVICE_STATE_ACTIVATED:
-                    # This device isn't active yet
-#                    continue
+                if devtype != self.__NM_DEVICE_TYPE_802_11_WIRELESS:
+                    continue
 
                 access_points = device.GetAccessPoints()
                 
