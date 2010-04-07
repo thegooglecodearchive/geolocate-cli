@@ -147,5 +147,6 @@ for line in input:
                 print_err("Could not find suitable locator")
 
 
-    location = locator.locate(info)
+    location = outputformatter.format_output(locator.locate(info), options.outputformat)
     print location
+

@@ -43,6 +43,7 @@ class CSVFormatter(Plugin, Formatter):
         return False
 
     def parse_input(self, input, specifiers=None):
+#FIXME!
         return json.loads(input)
         
     def format_output(self, output, specifiers=None):
@@ -59,7 +60,7 @@ class CSVFormatter(Plugin, Formatter):
                 if not key:
                     print_err("unknown specifier \"%s\"" % s)
                 if output.has_key(key):
-                    out.append(output[key])
+                    out.append(str(output[key]))
                 else:
                     out.append('')
 
