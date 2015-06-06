@@ -1,0 +1,1 @@
+A command-line geolocation client.  Still in pre-alpha stage.  Uses a plugin architecture so that different backends (wifi detection, ip detection, etc.), geolocators and geocoders (address/country/city to/from geographic coordinates) can be used.
